@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 
-MAIN_SCRIPT = "image_flattener.py"  # updated main script name
+MAIN_SCRIPT = "image_flattener.py"
 
 # --- Step 0: Check Python version ---
 MIN_PYTHON = (3, 9)
@@ -10,56 +10,19 @@ if sys.version_info < MIN_PYTHON:
     sys.stderr.write(f"ERROR: Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ is required.\n")
     sys.exit(1)
 
-# --- Step 1: Required dependencies ---
-REQUIRED = {
-    "launcherlib": None  # just ensure presence
-}
-
-def ensure_package(pkg, version=None):
-    target = f"{pkg}=={version}" if version else pkg
-    try:
-        import importlib.metadata as importlib_metadata
-        try:
-            installed = importlib_metadata.version(pkg)
-            if version and installed != version:
-                print(f"[!] {pkg} version mismatch: installed {installed}, expected {version}")
-                subprocess.check_call([sys.executable, "-m", "pip", "install", target])
-            else:
-                print(f"[+] {pkg} is present (version: {installed})")
-        except importlib_metadata.PackageNotFoundError:
-            print(f"[!] {pkg} not installed. Installing {target} ...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", target])
-    except Exception:
-        print(f"[!] Could not check {pkg} via importlib.metadata. Installing {target} ...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", target])
-
-print("Checking dependencies...\n")
-for pkg, version in REQUIRED.items():
-    try:
-        ensure_package(pkg, version)
-    except Exception as e:
-        print(f"[!] Failed to ensure {pkg}: {e}")
-print("\n✅ Dependency checks complete.\n")
-
-# --- Step 2: Locate launcherlib.py dynamically (search upward until root) ---
-def find_launcherlib(start_dir):
-    dir_to_check = os.path.abspath(start_dir)
-    while True:
-        candidate = os.path.join(dir_to_check, "launcherlib.py")
-        if os.path.exists(candidate):
-            return candidate
-        parent = os.path.dirname(dir_to_check)
-        if parent == dir_to_check:  # reached filesystem root
-            return None
-        dir_to_check = parent
-
+# --- Step 1: Locate launcherlib.py exactly 2 directories above ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-launcherlib_path = find_launcherlib(BASE_DIR)
-if not launcherlib_path:
-    sys.exit("ERROR: launcherlib.py not found in any parent folder.")
+launcherlib_path = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "launcherlib.py"))
+
+if not os.path.exists(launcherlib_path):
+    sys.exit(f"ERROR: launcherlib.py not found 2 directories above {BASE_DIR}.")
 print(f"✅ Found launcherlib.py at {launcherlib_path}\n")
 
-# --- Step 3: Flip setup_incomplete flag in main script safely ---
+# Add its folder to sys.path for import
+sys.path.insert(0, os.path.dirname(launcherlib_path))
+import launcherlib
+
+# --- Step 2: Flip setup_incomplete flag in main script safely ---
 target_file = os.path.join(BASE_DIR, MAIN_SCRIPT)
 if os.path.exists(target_file):
     try:
@@ -82,13 +45,13 @@ if os.path.exists(target_file):
 else:
     print(f"[!] Warning: {target_file} not found. Skipping flag update.")
 
-# --- Step 4: Victory message ---
+# --- Step 3: Victory message ---
 print(rf"""
 🎉 Setup complete! 🎉
 You may now run {MAIN_SCRIPT} safely.
 """)
 
-# --- Step 5: Auto-run main script ---
+# --- Step 4: Auto-run main script ---
 try:
     print(f"\n🚀 Launching {MAIN_SCRIPT} ...\n")
     subprocess.check_call([sys.executable, target_file])
