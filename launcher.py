@@ -53,17 +53,17 @@ SUBCOMMANDS = {
 
 # --- Tool registration (existing) ---
 register_tool(
-    "1", "Rename Chapters and Images", "renamer/renamerv2.py",
+    "1", "Rename Chapters and Images", "Renaming Tools/Renamer/renamer.py",
     group="Organizing Tools",
     long_desc="Recursively rename subfolders as ch1, ch2… and images as 001.ext, 002.ext"
 )
 register_tool(
-    "2", "Manual Sorter", "renamer/manual_sorter.py",
+    "2", "Manual Sorter", "Renaming Tools/Manual Sorter/manual_sorter.py",
     blocking=False, group="Organizing Tools",
     long_desc="GUI to manually reorder images and rename them sequentially"
 )
 register_tool(
-    "3", "Matching Renaming", "renamer/matching_renaming.py",
+    "3", "Matching Renaming", "Renaming Tools/Matching Renamer/matching_renaming.py",
     group="Organizing Tools",
     long_desc="Rename files by fuzzy matching against another folder’s files"
 )
