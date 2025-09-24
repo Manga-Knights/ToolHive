@@ -23,22 +23,32 @@ if setup_incomplete:
 
     sys.exit(1)
 
-# --- Original code continues below ---
-
+# --- launcherlib import ---
+try:
+    import launcherlib
+    from launcherlib import (
+        print_error,
+        print_warning,
+        print_success,
+        print_info,
+        print_menu_header,
+        ask_directory,
+        ask_saveas_filename,
+    )
+except ImportError:
+    print("❌ launcherlib not found. Please run setup_imagecount_reporter.py first.")
+    sys.exit(1)
 
 IMAGE_EXTS_DEFAULT = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.gif', '.tif'}
-
 
 def parse_extensions(ext_arg):
     if not ext_arg or not ext_arg.strip():
         return IMAGE_EXTS_DEFAULT
     cleaned = {
         ("." + e.lower().lstrip("."))
-        for e in (ext.strip() for ext in ext_arg.split(","))
-        if e
+        for e in (ext.strip() for ext in ext_arg.split(",")) if e
     }
     return cleaned or IMAGE_EXTS_DEFAULT
-
 
 def log_error_to_file(msg, log_file):
     try:
@@ -48,11 +58,7 @@ def log_error_to_file(msg, log_file):
     except Exception:
         pass  # don’t break script if logging fails
 
-
 def scan_folders(root_folder, extensions, args):
-    # defer launcherlib
-    from launcherlib import print_error
-
     folder_info = {}
 
     def helper(folder, depth):
@@ -87,11 +93,9 @@ def scan_folders(root_folder, extensions, args):
     helper(root_folder, 0)
     return folder_info
 
-
 def format_output(folder_info, root_folder, ascending=True):
     folders = [(f, info['direct_count'], info['total_count'])
                for f, info in folder_info.items()]
-
     folders.sort(key=lambda x: x[2], reverse=not ascending)
 
     lines = []
@@ -102,10 +106,7 @@ def format_output(folder_info, root_folder, ascending=True):
         lines.append(f"{name}: {direct} images (total: {total})")
     return "\n".join(lines)
 
-
 def run_cli(args):
-    from launcherlib import print_info, print_success, print_error
-
     try:
         extensions = parse_extensions(args.ext)
         folder_info = scan_folders(args.input, extensions, args)
@@ -121,7 +122,6 @@ def run_cli(args):
                 if order in ('a', 'd'):
                     ascending = (order == 'a')
                     break
-                from launcherlib import print_warning
                 print_warning("Invalid input. Enter 'a' or 'd'.")
 
         output_text = format_output(folder_info, args.input, ascending)
@@ -151,9 +151,7 @@ def run_cli(args):
             import traceback
             traceback.print_exc()
 
-
 def run_gui():
-    from launcherlib import ask_directory, ask_saveas_filename, print_warning, print_info, print_menu_header, print_success, print_error
     main_folder = ask_directory("Select Main Folder")
     if not main_folder:
         print_warning("Cancelled.")
@@ -167,14 +165,12 @@ def run_gui():
         if order in ('a', 'd'):
             ascending = (order == 'a')
             break
-        
         print_warning("Invalid input. Enter 'a' or 'd'.")
 
     output_text = format_output(folder_info, main_folder, ascending)
     print_menu_header("\n=== Image counts by folder (ranked) ===\n")
     print_info(output_text)
 
-    # NEW: ask to save results
     save_choice = input("\nSave output to text file? (y/n): ").strip().lower()
     if save_choice == 'y':
         save_path = ask_saveas_filename(
@@ -191,7 +187,6 @@ def run_gui():
                 print_error(f"Failed to save file: {e}")
         else:
             print_warning("Save cancelled.")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

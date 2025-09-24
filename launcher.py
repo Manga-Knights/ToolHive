@@ -68,7 +68,7 @@ register_tool(
     long_desc="Rename files by fuzzy matching against another folder’s files"
 )
 register_tool(
-    "4", "Image Flattener", "utils/image_flattener.py",
+    "4", "Image Flattener", "utils/Image Flattener/image_flattener.py",
     group="Organizing Tools",
     long_desc="Move all images from nested subfolders into the master folder"
 )
@@ -98,7 +98,7 @@ register_tool(
     long_desc="GUI to compare two image folders side-by-side with metrics"
 )
 register_tool(
-    "10", "Folder Image Count Reporter", "utils/imagecount_reporter.py",
+    "10", "Folder Image Count Reporter", "utils/ImageCount Reporter/imagecount_reporter.py",
     group="Viewing Tools",
     long_desc="Recursively count images in a folder and its subfolders"
 )
@@ -294,3 +294,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
