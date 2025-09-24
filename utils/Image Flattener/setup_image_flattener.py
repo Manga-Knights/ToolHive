@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 
-MAIN_SCRIPT = "image_flattener.py"
+MAIN_SCRIPT = "image_flattener.py"  # updated main script name
 
 # --- Step 0: Check Python version ---
 MIN_PYTHON = (3, 9)
@@ -41,28 +41,25 @@ for pkg, version in REQUIRED.items():
         print(f"[!] Failed to ensure {pkg}: {e}")
 print("\n✅ Dependency checks complete.\n")
 
-# --- Step 2: Locate launcherlib.py dynamically in 'tool hive' folder ---
+# --- Step 2: Locate launcherlib.py dynamically (search upward until root) ---
 def find_launcherlib(start_dir):
     dir_to_check = os.path.abspath(start_dir)
     while True:
-        if os.path.basename(dir_to_check).lower() == "tool hive":
-            candidate = os.path.join(dir_to_check, "launcherlib.py")
-            if os.path.exists(candidate):
-                return candidate
-            else:
-                return None
+        candidate = os.path.join(dir_to_check, "launcherlib.py")
+        if os.path.exists(candidate):
+            return candidate
         parent = os.path.dirname(dir_to_check)
-        if parent == dir_to_check:  # reached root
+        if parent == dir_to_check:  # reached filesystem root
             return None
         dir_to_check = parent
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 launcherlib_path = find_launcherlib(BASE_DIR)
 if not launcherlib_path:
-    sys.exit("ERROR: launcherlib.py not found in 'tool hive' folder.")
+    sys.exit("ERROR: launcherlib.py not found in any parent folder.")
 print(f"✅ Found launcherlib.py at {launcherlib_path}\n")
 
-# --- Step 3: Flip setup_incomplete flag in image_flattener.py ---
+# --- Step 3: Flip setup_incomplete flag in main script safely ---
 target_file = os.path.join(BASE_DIR, MAIN_SCRIPT)
 if os.path.exists(target_file):
     try:
@@ -71,7 +68,7 @@ if os.path.exists(target_file):
         with open(target_file, "w", encoding="utf-8") as f:
             replaced = False
             for line in lines:
-                if line.strip().startswith("setup_incomplete"):
+                if line.strip().startswith("setup_incomplete") and "True" in line:
                     f.write("setup_incomplete = False\n")
                     replaced = True
                 else:
@@ -79,7 +76,7 @@ if os.path.exists(target_file):
         if replaced:
             print(f"✅ Updated setup_incomplete flag in {target_file}")
         else:
-            print(f"⚠️ No setup_incomplete assignment found in {target_file}; skipping flag update.")
+            print(f"⚠️ No setup_incomplete=True found in {target_file}; skipping flag update.")
     except Exception as e:
         print(f"[!] Could not update {target_file}: {e}")
 else:
