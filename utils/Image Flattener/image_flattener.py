@@ -42,7 +42,11 @@ import os
 import shutil
 import re
 import argparse
-from launcherlib import ask_directory, print_warning, print_error, print_success, Colors, print_info
+try:
+    from launcherlib import ask_directory, print_warning, print_error, print_success, Colors, print_info
+except ImportError:
+    print("❌ launcherlib not found. Please run setup_image_flattener.py first.")
+    sys.exit(1)
 
 DEFAULT_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".gif"}
 
