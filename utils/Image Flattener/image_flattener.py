@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# ToolHive Launcher
-# Copyright (C) 2025 Your Name
+# ToolHive Image Flattener
+# Copyright (C) 2025 Manga-Knights
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,43 +12,38 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
-
 import sys
 import subprocess
-
-# --- Setup guard ---
-setup_incomplete = True  # Flipped to False by setup.py . to prevent the script from running unless setup is completed.
-
-if setup_incomplete:
-    import os, sys, subprocess
-
-    print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
-
-    # Determine setup script path dynamically
-    script_name = os.path.splitext(os.path.basename(__file__))[0]
-    setup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"setup_{script_name}.py")
-
-    if os.path.exists(setup_path):
-        print(f"Launching {setup_path}...")
-        subprocess.run([sys.executable, setup_path])
-    else:
-        print(f"❌ Setup script not found: {setup_path}")
-
-    sys.exit(1)
-
-# --- Original code continues below ---
-
-import os
+from pathlib import Path
 import shutil
 import re
 import argparse
+
 try:
-    from launcherlib import ask_directory, print_warning, print_error, print_success, Colors, print_info
+    from launcherlib.dialogs import ask_directory 
+    from launcherlib.prints import print_warning, print_error, print_success, Colors, print_info
 except ImportError:
     print("❌ launcherlib not found. Please run setup_image_flattener.py first.")
     sys.exit(1)
 
 DEFAULT_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".gif"}
+
+# --- Setup guard ---
+setup_incomplete = False
+
+if setup_incomplete:
+    print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
+
+    script_name = Path(__file__).stem
+    setup_path = Path(__file__).resolve().parent / f"setup_{script_name}.py"
+
+    if setup_path.exists():
+        print(f"Launching {setup_path}...")
+        subprocess.run([sys.executable, str(setup_path)])
+    else:
+        print(f"❌ Setup script not found: {setup_path}")
+
+    sys.exit(1)
 
 
 def parse_extensions(ext_arg):
@@ -56,7 +51,7 @@ def parse_extensions(ext_arg):
         return DEFAULT_EXTENSIONS
     cleaned = {
         ("." + e.lower().lstrip("."))
-        for e in (ext.strip() for ext in ext_arg.split(","))
+        for e in (ext.strip() for e in ext_arg.split(","))
         if e
     }
     return cleaned or DEFAULT_EXTENSIONS
@@ -68,40 +63,34 @@ def sanitize_name(name, max_length):
 
 
 def run_image_flattener(args):
-    master_folder = args.input or ask_directory("Select Master Folder")
+    master_folder = Path(args.input) if args.input else ask_directory("Select Master Folder")
     if not master_folder:
-        print_warning("No folder selected. Exiting.")
         return 1
 
     extensions = parse_extensions(args.ext)
     moved_files = []
 
-    for root_dir, _, files in os.walk(master_folder):
-        if root_dir == master_folder:
-            continue
-
-        for file in files:
-            ext = os.path.splitext(file)[1].lower()
-            if ext in extensions:
-                safe_name = sanitize_name(file, args.maxfilename)
-                src_path = os.path.join(root_dir, file)
-                dest_path = os.path.join(master_folder, safe_name)
+    for file_path in master_folder.rglob("*"):
+        if file_path.is_file() and file_path.parent != master_folder:
+            if file_path.suffix.lower() in extensions:
+                safe_name = sanitize_name(file_path.name, args.maxfilename)
+                dest_path = master_folder / safe_name
 
                 counter = 1
-                while os.path.exists(dest_path):
-                    name_no_ext, file_ext = os.path.splitext(safe_name)
-                    dest_path = os.path.join(master_folder, f"{name_no_ext}_{counter}{file_ext}")
+                while dest_path.exists():
+                    name_no_ext, file_ext = Path(safe_name).stem, Path(safe_name).suffix
+                    dest_path = master_folder / f"{name_no_ext}_{counter}{file_ext}"
                     counter += 1
 
                 try:
-                    shutil.move(src_path, dest_path)
-                    moved_files.append((src_path, dest_path))
+                    shutil.move(str(file_path), str(dest_path))
+                    moved_files.append((file_path, dest_path))
                 except Exception as e:
                     if args.debug:
                         import traceback
                         traceback.print_exc()
                     else:
-                        print_error(f"Failed to move {src_path}: {e}")
+                        print_error(f"Failed to move {file_path}: {e}")
 
     if moved_files:
         print_success(f"\nMoved {len(moved_files)} files into {master_folder}")

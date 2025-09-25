@@ -1,23 +1,34 @@
-import os
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ToolHive ImageCount Reporter
+# Copyright (C) 2025 Manga-Knights
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
+
 import sys
 import argparse
 import subprocess
+from pathlib import Path
 
 # --- Setup guard ---
-setup_incomplete = True  # Flipped to False by setup.py
+setup_incomplete = False  # Flipped to False by setup.py
 
 if setup_incomplete:
-    import os, sys, subprocess
-
     print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
 
-    # Determine setup script path dynamically
-    script_name = os.path.splitext(os.path.basename(__file__))[0]
-    setup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"setup_{script_name}.py")
+    script_name = Path(__file__).stem
+    setup_path = Path(__file__).resolve().parent / f"setup_{script_name}.py"
 
-    if os.path.exists(setup_path):
+    if setup_path.exists():
         print(f"Launching {setup_path}...")
-        subprocess.run([sys.executable, setup_path])
+        subprocess.run([sys.executable, str(setup_path)])
     else:
         print(f"❌ Setup script not found: {setup_path}")
 
@@ -25,21 +36,20 @@ if setup_incomplete:
 
 # --- launcherlib import ---
 try:
-    import launcherlib
-    from launcherlib import (
+    from launcherlib.prints import (
         print_error,
         print_warning,
         print_success,
         print_info,
         print_menu_header,
-        ask_directory,
-        ask_saveas_filename,
     )
+    from launcherlib.dialogs import ask_directory, ask_saveas_filename
 except ImportError:
     print("❌ launcherlib not found. Please run setup_imagecount_reporter.py first.")
     sys.exit(1)
 
 IMAGE_EXTS_DEFAULT = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.gif', '.tif'}
+
 
 def parse_extensions(ext_arg):
     if not ext_arg or not ext_arg.strip():
@@ -50,6 +60,7 @@ def parse_extensions(ext_arg):
     }
     return cleaned or IMAGE_EXTS_DEFAULT
 
+
 def log_error_to_file(msg, log_file):
     try:
         import datetime
@@ -58,18 +69,22 @@ def log_error_to_file(msg, log_file):
     except Exception:
         pass  # don’t break script if logging fails
 
+
 def scan_folders(root_folder, extensions, args):
+    root_folder = Path(root_folder)
     folder_info = {}
 
     def helper(folder, depth):
+        folder = Path(folder)
         direct_count = 0
         children = []
+
         try:
-            for entry in os.scandir(folder):
-                if entry.is_file() and os.path.splitext(entry.name)[1].lower() in extensions:
+            for entry in folder.iterdir():
+                if entry.is_file() and entry.suffix.lower() in extensions:
                     direct_count += 1
                 elif entry.is_dir():
-                    children.append(entry.path)
+                    children.append(entry)
         except Exception as e:
             msg = f"Could not access {folder}: {e}"
             print_error(msg)
@@ -83,7 +98,7 @@ def scan_folders(root_folder, extensions, args):
         for child in children:
             total += helper(child, depth + 1)
 
-        folder_info[folder] = {
+        folder_info[str(folder)] = {
             'depth': depth,
             'direct_count': direct_count,
             'total_count': total,
@@ -93,18 +108,21 @@ def scan_folders(root_folder, extensions, args):
     helper(root_folder, 0)
     return folder_info
 
+
 def format_output(folder_info, root_folder, ascending=True):
-    folders = [(f, info['direct_count'], info['total_count'])
+    root_folder = Path(root_folder)
+    folders = [(Path(f), info['direct_count'], info['total_count'])
                for f, info in folder_info.items()]
     folders.sort(key=lambda x: x[2], reverse=not ascending)
 
     lines = []
     for f, direct, total in folders:
-        name = os.path.relpath(f, root_folder)
+        name = str(f.relative_to(root_folder))
         if name == ".":
-            name = os.path.basename(root_folder)
+            name = str(root_folder.name)
         lines.append(f"{name}: {direct} images (total: {total})")
     return "\n".join(lines)
+
 
 def run_cli(args):
     try:
@@ -130,9 +148,10 @@ def run_cli(args):
 
         if args.output:
             try:
-                with open(args.output, "w", encoding="utf-8") as f:
+                output_path = Path(args.output)
+                with open(output_path, "w", encoding="utf-8") as f:
                     f.write(output_text)
-                print_success(f"Output saved to: {args.output}")
+                print_success(f"Output saved to: {output_path}")
             except Exception as e:
                 msg = f"Failed to save file: {e}"
                 print_error(msg)
@@ -151,12 +170,14 @@ def run_cli(args):
             import traceback
             traceback.print_exc()
 
+
 def run_gui():
     main_folder = ask_directory("Select Main Folder")
     if not main_folder:
         print_warning("Cancelled.")
         return 1
 
+    main_folder = Path(main_folder)
     extensions = IMAGE_EXTS_DEFAULT
     folder_info = scan_folders(main_folder, extensions, argparse.Namespace(debug=False, log=None))
 
@@ -179,6 +200,7 @@ def run_gui():
             filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
         )
         if save_path:
+            save_path = Path(save_path)
             try:
                 with open(save_path, "w", encoding="utf-8") as f:
                     f.write(output_text)
@@ -187,6 +209,7 @@ def run_gui():
                 print_error(f"Failed to save file: {e}")
         else:
             print_warning("Save cancelled.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
