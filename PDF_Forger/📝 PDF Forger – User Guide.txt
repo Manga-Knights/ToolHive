@@ -1,0 +1,134 @@
+📝 OCR-PDF Tool – User Guide
+What this tool does
+
+This tool converts image folders into PDF files. You can also apply OCR (Optical Character Recognition) so the text in your images becomes searchable in the PDF. You can use:
+
+ - PaddleOCR – good for multiple languages and structured text.
+
+ - Tesseract OCR – widely compatible and configurable.
+
+ - No OCR – just create PDFs from images.
+
+__________________________________________________________________________________________________________________________________________
+
+How to Use
+1️⃣ Start the Tool
+
+Double-click or run the tool in your terminal. You’ll see prompts guiding you through the process.
+
+__________________________________________________________________________________________________________________________________________
+
+2️⃣ Choose OCR Options
+
+1.Do you want to OCR your PDF?
+
+Yes → follow next steps to pick OCR engine.
+
+No → images will be combined into PDFs without text recognition.
+
+2.Choose OCR Engine (if OCR is enabled)
+
+1 – PaddleOCR → Recommended for multi-language documents.
+
+2 – Tesseract → Flexible, allows page segmentation mode.
+
+3 – Return to home → Restart the tool.
+
+
+__________________________________________________________________________________________________________________________________________
+
+3️⃣ Configure OCR (Optional)
+
+1.PaddleOCR
+
+ - You can set a confidence threshold (default: 0.6). Higher threshold means only very confident text is included.
+
+ - Preview the OCR with overlays (boxes + text) to see what will appear in your PDF.
+
+2.Tesseract
+
+1)Select languages (e.g., eng+jpn).
+
+2)Choose Page Segmentation Mode (PSM) to match your document layout:
+
+ - Automatic layout
+
+ - Manga-style bubbles
+
+ - Sparse text
+
+ - Columns (newspapers)
+
+ - Auto detect
+
+3)Preview OCR results with or without overlays.
+
+__________________________________________________________________________________________________________________________________________
+
+4️⃣ Select Master Folder
+
+ - Pick the main folder containing subfolders of images.
+
+ - The tool will automatically detect all subfolders containing images.
+
+__________________________________________________________________________________________________________________________________________
+
+5️⃣ PDF Creation
+
+1.The tool will create one PDF per subfolder.
+
+2.PDFs are saved next to the original folder, with names like:
+
+ - Project1_paddle.pdf (PaddleOCR)
+
+ - Project2.pdf (Tesseract without overlays)
+
+ - Project3_images.pdf (no OCR)
+
+__________________________________________________________________________________________________________________________________________
+
+Master Folder
+┌─────────────┐
+│ Project1    │
+│  ┌───────┐ │
+│  │ img1  │ │
+│  │ img2  │ │
+│  └───────┘ │
+└─────────────┘
+      │
+      ▼
+[OCR Engine / PDF Converter]
+      │
+      ▼
+Project1_paddle.pdf
+
+
+__________________________________________________________________________________________________________________________________________
+
+6️⃣ Finished
+
+ - Tool will notify you when all PDFs are done.
+
+ - Check log.txt for any skipped images or warnings.
+
+__________________________________________________________________________________________________________________________________________
+
+7️⃣ Next Steps
+
+1.After processing, you can:
+
+ - Return to home → run another folder.
+
+ - Exit → close the tool.
+
+__________________________________________________________________________________________________________________________________________
+
+Tips for Non-Technical Users
+
+ - Keep your images in separate subfolders per project.
+
+ - Preview OCR before finalizing PDFs.
+
+ - Use overlays only if you want to check detected text visually.
+
+ - Logs (log.txt) contain any errors — no need to worry unless PDF is missing pages.
