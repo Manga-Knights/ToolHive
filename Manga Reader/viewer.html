@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manga Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <input type="file" id="folderPicker" webkitdirectory multiple hidden>
+
+    <div id="splash">
+        <canvas id="splashParticles"></canvas>
+        <h1>Tool Hive</h1>
+        <h2>Manga Viewer</h2>
+    </div>
+
+    <div class="top-bar">
+        <button onclick="document.getElementById('folderPicker').click()">📂 Open Folder</button>
+        <button onclick="chooseFolder()">📦 Open CBZ/PDF/RAR</button>
+        <button id="fitToggle" onclick="toggleFit()" style="display:none;">🖼 Fit to Width</button>
+        <button id="borderToggle" onclick="toggleBorders()" style="display:none;">🎨 Toggle Borders</button>
+        <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+            <input type="number" id="pageInput" min="1" value="1" style="width:60px; text-align:center;">
+            <button id="pageTotalBtn" style="padding:10px 16px; font-size:16px;">1</button>
+        </div>
+
+    </div>
+
+    <div id="infoBanner">
+        <span>Tip: If you extracted a file just now, use the <b>"Open Folder"</b> button to select the extracted folder
+            and start reading.</span>
+        <button class="close-btn" onclick="hideInfoBanner()">&times;</button>
+    </div>
+
+    <div id="pageIndicator">1</div>
+
+    <script>
+        let fitToWidth = true;
+        let bordersOn = false;
+        let allFiles = [];
+        let loadedCount = 0;
+        const batchSize = 10;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById("fitToggle").innerText = "🖼 Original Size";
+            document.getElementById("borderToggle").innerText = "🎨 Toggle Borders";
+
+            document.querySelector("button[onclick*='folderPicker']").title = "Open a folder of images";
+            document.querySelector("button[onclick*='chooseFolder']").title = "View CBZ/PDF (see instructions)";
+            document.getElementById('fitToggle').title = "Toggle fit-to-width (F)";
+            document.getElementById('borderToggle').title = "Toggle borders (B)";
+
+            const topBar = document.querySelector('.top-bar');
+            setTimeout(() => { topBar.classList.add('show'); }, 100);
+
+            pageIndicator.style.display = 'none';
+            pageInput.style.display = 'none';
+            pageTotal.style.display = 'none';
+            document.getElementById("fitToggle").style.display = 'none';
+            document.getElementById("borderToggle").style.display = 'none';
+        });
+
+        function chooseFolder() {
+            alert("📦 To open a CBZ, PDF or RAR:\n\n1. Open the 'Manga Reader' folder.\n2. Run:\n\n    python mangareader.py\n\nThis will extract your manga and auto-launch this viewer.");
+        }
+
+        async function toggleFit() {
+            const currentPage = getCurrentPage(); // record current page
+            fitToWidth = !fitToWidth;
+
+            document.querySelectorAll("img.manga-img").forEach(img => {
+                fitToWidth ? img.classList.remove("original-size") : img.classList.add("original-size");
+            });
+
+            document.getElementById("fitToggle").innerText = fitToWidth ? "🖼 Original Size" : "🖼 Fit to Width";
+
+            // Force jump to the current page after toggle
+            await scrollToPage(currentPage);
+        }
+
+        // Helper function to scroll to a page with batch loading
+        async function scrollToPage(pageNum) {
+            pageNum = Math.min(Math.max(1, pageNum), allFiles.length);
+
+            // Load batches until page exists
+            while (loadedCount < pageNum) {
+                loadNextBatch();
+                await new Promise(r => setTimeout(r, 0)); // yield to DOM
+            }
+
+            // Instant jump (no smooth)
+            document.querySelectorAll("img.manga-img")[pageNum - 1]
+                .scrollIntoView({ behavior: 'auto', block: 'start' });
+
+            // Wait until page is visible
+            await new Promise(resolve => {
+                const checkVisible = () => {
+                    const rect = document.querySelectorAll("img.manga-img")[pageNum - 1].getBoundingClientRect();
+                    if (rect.top >= 0 && rect.bottom <= window.innerHeight + 20) {
+                        resolve();
+                    } else {
+                        requestAnimationFrame(checkVisible);
+                    }
+                };
+                checkVisible();
+            });
+
+            pageInput.value = getCurrentPage();
+            resizePageInput();
+        }
+
+
+
+        async function toggleBorders() {
+            const currentPage = getCurrentPage(); // record current page
+            bordersOn = !bordersOn;
+
+            document.querySelectorAll("img.manga-img").forEach(img => {
+                bordersOn ? img.classList.add("bordered") : img.classList.remove("bordered");
+            });
+
+            // Force jump to current page after toggle
+            await scrollToPage(currentPage);
+        }
+
+
+        function hideInfoBanner() {
+            const banner = document.getElementById('infoBanner');
+            if (!banner) return;
+            banner.style.animation = 'slideOut 0.5s forwards';
+            banner.addEventListener('animationend', () => banner.remove(), { once: true });
+        }
+
+        function showTopBar() {
+            const topBar = document.querySelector('.top-bar');
+            topBar.classList.add('show');
+            topBar.classList.remove('hide');
+            slideDownElements();
+        }
+
+        function hideTopBar() {
+            const topBar = document.querySelector('.top-bar');
+            topBar.classList.remove('show');
+            topBar.classList.add('hide');
+            slideUpElements();
+            resetPageInputOnHide();
+        }
+
+        function slideDownElements() {
+            const elems = [pageInput, pageTotal, document.getElementById("fitToggle"), document.getElementById("borderToggle")];
+            elems.forEach(el => {
+                el.style.transition = 'all 0.3s ease';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+                el.style.display = 'inline-block';
+            });
+        }
+
+        function slideUpElements() {
+            const elems = [pageInput, pageTotal, document.getElementById("fitToggle"), document.getElementById("borderToggle")];
+            elems.forEach(el => {
+                el.style.transition = 'all 0.3s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-20px)';
+                setTimeout(() => el.style.display = 'none', 300);
+            });
+        }
+
+        document.body.addEventListener('mousemove', (e) => {
+            const topBar = document.querySelector('.top-bar');
+            if (e.clientY <= 50 && allFiles.length) {
+                // Show top bar immediately
+                topBar.classList.add('show');
+                topBar.classList.remove('hide');
+
+                pageIndicatorPriority = true;
+                showPageIndicator(true);
+                updatePageUI();
+            } else if (allFiles.length) {
+                // Hide top bar only if folder loaded
+                topBar.classList.remove('show');
+                topBar.classList.add('hide');
+                pageIndicatorPriority = false;
+                hidePageIndicator();
+            }
+        });
+
+        const folderPicker = document.getElementById('folderPicker');
+        folderPicker.addEventListener('change', () => {
+            allFiles = Array.from(folderPicker.files)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .filter(f => f.type.startsWith('image/'));
+            loadedCount = 0;
+            if (!allFiles.length) return;
+
+            showTopBar();
+
+            const splash = document.getElementById('splash');
+            if (splash) splash.remove();
+
+            hideInfoBanner();
+            document.querySelectorAll(".manga-img").forEach(el => el.remove());
+
+            loadNextBatch();
+            updatePageUI();
+        });
+
+        function loadNextBatch() {
+            const nextFiles = allFiles.slice(loadedCount, loadedCount + batchSize);
+            nextFiles.forEach(file => {
+                const img = document.createElement('img');
+                img.classList.add('manga-img');
+                img.src = URL.createObjectURL(file);
+                if (bordersOn) img.classList.add('bordered');
+                if (!fitToWidth) img.classList.add('original-size');
+                document.body.appendChild(img);
+            });
+            loadedCount += nextFiles.length;
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key.toLowerCase() === 'f') toggleFit();
+            if (e.key.toLowerCase() === 'b') toggleBorders();
+        });
+
+        const pageIndicator = document.getElementById('pageIndicator');
+        const pageInput = document.getElementById('pageInput');
+        const pageTotal = document.getElementById('pageTotalBtn');
+        let scrollTimeout;
+        let pageIndicatorPriority = false;
+
+        function getCurrentPage() {
+            const imgs = document.querySelectorAll("img.manga-img");
+            if (!imgs.length) return 1;
+            const viewportMiddle = window.innerHeight / 2;
+            let currentPage = 1;
+            imgs.forEach((img, index) => {
+                const rect = img.getBoundingClientRect();
+                if (rect.top <= viewportMiddle && rect.bottom >= viewportMiddle) currentPage = index + 1;
+            });
+            return currentPage;
+        }
+
+        function resizePageInput() {
+            const input = pageInput;
+            const valueLength = input.value.length;
+            input.style.width = `${Math.max(2, valueLength)}ch`;
+        }
+
+        // Call this whenever the pageInput value changes
+        pageInput.addEventListener('input', resizePageInput);
+        pageInput.addEventListener('keydown', () => setTimeout(resizePageInput, 0));
+
+        // Also call after UI updates
+        function updatePageUI() {
+            const imgs = document.querySelectorAll("img.manga-img");
+            const hasFolder = imgs.length > 0;
+
+            pageInput.style.display = hasFolder ? "inline-block" : "none";
+            pageTotal.style.display = hasFolder ? "inline-block" : "none";
+            document.getElementById("fitToggle").style.display = hasFolder ? "inline-block" : "none";
+            document.getElementById("borderToggle").style.display = hasFolder ? "inline-block" : "none";
+
+            if (!hasFolder) {
+                pageIndicator.style.display = "none";
+                return;
+            }
+
+            const current = getCurrentPage();
+            const total = allFiles.length;
+
+            pageIndicator.style.display = "block";
+            pageIndicator.textContent = `${current} / ${total}`;
+            pageTotal.textContent = `/ ${total}`;
+            pageInput.value = current;
+
+            resizePageInput(); // adjust width dynamically
+        }
+
+        function showPageIndicator(priority = false) {
+            if (priority) pageIndicatorPriority = true;
+            pageIndicator.style.opacity = 1;
+            clearTimeout(scrollTimeout);
+            if (!priority) {
+                scrollTimeout = setTimeout(() => {
+                    if (!pageIndicatorPriority) pageIndicator.style.opacity = 0;
+                }, 1200);
+            }
+        }
+
+        function hidePageIndicator() {
+            pageIndicator.style.opacity = 0;
+            pageIndicatorPriority = false;
+        }
+
+        window.addEventListener('scroll', () => {
+            updatePageUI();
+            showPageIndicator();
+            if (loadedCount < allFiles.length) {
+                const lastImg = document.querySelector("img.manga-img:last-of-type");
+                if (lastImg && lastImg.getBoundingClientRect().bottom <= window.innerHeight + 200) {
+                    loadNextBatch();
+                }
+            }
+        });
+
+        pageInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                let pageNum = parseInt(pageInput.value);
+
+                if (isNaN(pageNum) || pageNum < 1) return;
+
+                // Clamp to max
+                pageNum = Math.min(pageNum, allFiles.length);
+
+                // Load batches until page exists
+                while (loadedCount < pageNum) {
+                    loadNextBatch();
+                    await new Promise(r => setTimeout(r, 0));
+                }
+
+                // Wait until the image is actually rendered in DOM
+                const targetImg = document.querySelectorAll("img.manga-img")[pageNum - 1];
+                await new Promise(resolve => {
+                    function checkRendered() {
+                        const rect = targetImg.getBoundingClientRect();
+                        if (rect.height > 0) resolve();
+                        else requestAnimationFrame(checkRendered);
+                    }
+                    checkRendered();
+                });
+
+                // Decide scroll behavior
+                const currentPage = getCurrentPage();
+                const behavior = Math.abs(pageNum - currentPage) <= 5 ? 'smooth' : 'auto';
+                targetImg.scrollIntoView({ behavior: behavior, block: 'start' });
+
+                pageInput.value = getCurrentPage();
+                resizePageInput();
+            }
+        });
+
+        document.addEventListener('keydown', async (e) => {
+            if (!allFiles.length) return;
+
+            const currentPage = getCurrentPage();
+            let targetPage = currentPage;
+            let handled = false;
+
+            switch (e.key) {
+                case 'ArrowRight':
+                    targetPage = Math.min(currentPage + 1, allFiles.length);
+                    handled = true;
+                    break;
+                case 'ArrowLeft':
+                    targetPage = Math.max(currentPage - 1, 1);
+                    handled = true;
+                    break;
+                case 'PageDown':
+                    targetPage = Math.min(currentPage + 10, allFiles.length);
+                    handled = true;
+                    break;
+                case 'PageUp':
+                    targetPage = Math.max(currentPage - 10, 1);
+                    handled = true;
+                    break;
+                case 'Home':
+                    targetPage = 1;
+                    handled = true;
+                    break;
+                case 'End':
+                    targetPage = allFiles.length;
+                    handled = true;
+                    break;
+                // ArrowUp and ArrowDown are not intercepted, normal scroll works
+            }
+
+            if (handled) {
+                e.preventDefault(); // only prevent default for keys we handle
+                await scrollToPage(targetPage);
+            }
+        });
+
+        // Reset top bar input to match floating indicator when top bar hides
+        function resetPageInputOnHide() {
+            if (!pageIndicator.textContent.includes('/')) return;
+            pageInput.value = pageIndicator.textContent.split(" / ")[0];
+        }
+
+        // Splash particle effect
+        (function () {
+            const canvas = document.getElementById('splashParticles');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const particleCount = 30;
+            let w, h, animationFrame;
+
+            function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize); resize();
+
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h,
+                        size: 2 + Math.random() * 3,
+                        speedY: 0.2 + Math.random() * 0.5,
+                        alpha: 0.2 + Math.random() * 0.3
+                    });
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                particles.forEach(p => {
+                    ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    p.y -= p.speedY;
+                    if (p.y < -p.size) p.y = h + p.size;
+                });
+                animationFrame = requestAnimationFrame(draw);
+            }
+
+            initParticles();
+            draw();
+
+            const splash = document.getElementById('splash');
+            if (splash) {
+                const observer = new MutationObserver(() => {
+                    if (!document.body.contains(splash)) {
+                        cancelAnimationFrame(animationFrame);
+                        ctx.clearRect(0, 0, w, h);
+                    }
+                });
+                observer.observe(document.body, { childList: true });
+            }
+        })();
+    </script>

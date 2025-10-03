@@ -1,0 +1,118 @@
+===========================
+📦 MANGA VIEWER SETUP GUIDE
+===========================
+This is a basic manga reader for smooth borderless scrolling. To mimic moon+ reader like experience
+
+It is a very basic reader and does NOT contain any extra feature other than the viewer itself
+
+This guide helps you extract and view manga/comics from folders, .CBZ, or .PDF files using a Python backend and a minimal HTML frontend.
+
+Works offline after setup.
+
+it works on ios too. but the instructions are for mainly windows. you may need to search how to do a few things if you use ios
+---------------------------
+🧰 PREREQUISITES (Install Once)
+---------------------------
+
+1. ✅ Install Python 3.10 or above:
+   👉 https://www.python.org/downloads/
+
+   During install, CHECK ✅ "Add Python to PATH"
+
+2. ✅ Install required Python packages:
+   Open CMD or Terminal and run:
+
+   pip install flask pillow PyMuPDF rarfile
+
+   ⮕ If you're on Linux or macOS, use:
+   python3 -m pip install flask pillow PyMuPDF rarfile
+
+3. NOTE: i have already done this step and bundled the exe within the folder. only repeat the below given step if they release a newer version of unrar
+
+✅ (Windows Only) Install unrar.exe for .CBZ files containing .rar:
+   Download from: https://www.rarlab.com/rar_add.htm
+   - Put `unrar.exe` in the same folder as this project, or add to PATH.
+
+---------------------------
+📁 FILE STRUCTURE
+---------------------------
+
+Place all files in one folder:
+
+    manga_viewer/
+    ├── extract.py           ← Python backend
+    ├── viewer.html          ← Manga viewer UI
+    ├── instructions.txt     ← This file
+   
+
+---------------------------
+▶️ HOW TO USE
+---------------------------
+
+1. Open the `manga_viewer` folder.
+
+2. Right-click in empty space → "Open in Terminal" or "Open in CMD".
+
+3. Run this command to start the server:
+
+   python extract.py
+
+   ⮕ You should see: "Running on http://localhost:8765"
+
+4. Now open the `viewer.html` file (double-click it) in Google Chrome.
+
+---------------------------
+📂 TO VIEW A MANGA FOLDER
+---------------------------
+
+1. Click 📂 "Open Folder" in the viewer.
+2. Choose a folder with images (JPG/PNG).
+3. Done! Images will display in scroll view.
+
+---------------------------
+📦 TO VIEW CBZ or PDF FILE
+---------------------------
+
+1. Click "Choose CBZ/PDF/RAR" in the viewer.
+2. Select your `.cbz` or `.pdf` file.
+3. The viewer will extract and display the pages.
+4. the pdf/cbz/image folder can be anywhere(remember it need not be in the same folder)
+5. after running extract.py the viewver will launch automatically. just click on open folder and choose. you will have a folder named exactly the same as your pdf/cbz/rar file in the same directory as your pdf/cbz/rar file
+
+   Note:
+   - .cbz = a .zip/.rar containing images.
+   - .pdf = pages extracted using PyMuPDF.
+
+
+TO VIEW RAR FILE
+1.open cmd and type
+pip install rarfile
+note: for instructions on opening cmd. see the bottommost portion of this instruction manual
+---------------------------
+🛑 TO QUIT
+---------------------------
+
+- Close the terminal window running `extract.py`.
+
+- Close the browser tab.
+
+---------------------------
+🆘 TROUBLESHOOTING
+---------------------------
+
+❌ Error: "ModuleNotFoundError"
+✔️ Run: pip install flask pillow PyMuPDF rarfile
+
+❌ Viewer shows white screen
+✔️ You forgot to run `python extract.py`
+
+❌ CBZ not working
+✔️ Make sure `unrar.exe` is available (see above)
+
+
+NOTE: to open cmd just enter inside the manga reader folder. click on the folder path. at the top of file explorer(in windows). and type cmd and hit enter. there you can type all the commands mentioned
+
+---------------------------
+✨ ENJOY YOUR MANGA!
+---------------------------
+Made with ❤️

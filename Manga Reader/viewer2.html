@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manga Viewer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #000000;
+            /* darkest black */
+            color: #f1f1f1;
+            font-family: 'Segoe UI', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+
+        /* Subtle animated background for the splash */
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            /* prevents flex children from stretching canvas */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+        }
+
+
+        /* Splash texts */
+        #splash h1 {
+            font-size: 6vw;
+            color: #fff;
+            margin: 0;
+            text-align: center;
+            background: linear-gradient(270deg, #6effff, #ff6eff, #ffff6e);
+            background-size: 600% 600%;
+            background-clip: text;
+            /* standard property */
+            -webkit-background-clip: text;
+            /* for WebKit browsers */
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            /* ensure starts invisible */
+            animation: textGradient 6s ease infinite, fadeIn 2.4s forwards;
+        }
+
+        #splash h2 {
+            font-size: 4vw;
+            color: #fff;
+            margin: 10px 0 0 0;
+            text-align: center;
+            opacity: 0;
+            animation: slideDownFade 1s forwards 1.1s;
+            /* starts after h1 fade-in finishes */
+        }
+
+        /* Particle canvas container */
+        #splashParticles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 8999;
+        }
+
+        /* Text gradient animation */
+        @keyframes textGradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Slide down + fade in for h2 */
+        @keyframes slideDownFade {
+            0% {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Background gradient animation */
+        @keyframes bgShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+
+        @keyframes slideFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Top bar animation + styling */
+        .top-bar {
+            position: fixed;
+            top: -60px;
+            left: 0;
+            width: 100%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 6px;
+            z-index: 9999;
+            transition: top 0.8s ease, opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .top-bar.show {
+            animation: slideDown 0.3s forwards;
+            /* faster appear */
+        }
+
+        .top-bar.hide {
+            animation: slideUp 1.5s forwards;
+            /* slower hide */
+        }
+
+        @keyframes slideDown {
+            from {
+                top: -60px;
+                opacity: 0;
+            }
+
+            to {
+                top: 0;
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                top: 0;
+                opacity: 1;
+            }
+
+            to {
+                top: -60px;
+                opacity: 0;
+            }
+        }
+
+        .top-bar button {
+            background: rgba(34, 34, 34, 0.7);
+            /* slightly translucent */
+            border: 2px solid rgba(68, 68, 68, 0.8);
+            color: #f1f1f1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.25s ease;
+            transform: scale(1);
+            /* start at normal size */
+        }
+
+        .top-bar button:hover {
+            background: rgba(46, 204, 113, 0.8);
+            /* translucent green */
+            border-color: #27ae60;
+            color: #111;
+            animation: popBounce 0.3s forwards;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+        }
+
+        .top-bar button:not(:hover) {
+            animation: popReset 0.2s forwards;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            /* optional: remove shadow on leave */
+        }
+
+        @keyframes popBounce {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.08);
+            }
+
+            70% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes popReset {
+            from {
+                transform: scale(1.05);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        #pageInput {
+            background: rgba(34, 34, 34, 0.7);
+            /* translucent like buttons */
+            border: 2px solid rgba(68, 68, 68, 0.8);
+            color: #f1f1f1;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 16px;
+            cursor: text;
+            transition: 0.2s;
+            text-align: center;
+            display: none;
+            width: 60px;
+        }
+
+        #pageInput:focus {
+            background: rgba(46, 204, 113, 0.8);
+            /* translucent green */
+            border-color: #27ae60;
+            color: #111;
+            animation: popBounce 0.3s forwards;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Info banner */
+        #infoBanner {
+            position: fixed;
+            top: 60px;
+            left: -1000px;
+            z-index: 9998;
+            background: rgba(34, 34, 34, 0.7);
+            /* slightly translucent */
+            border-left: 5px solid #2ecc71;
+            padding: 10px 14px;
+            color: #f1f1f1;
+            font-size: 14px;
+            max-width: 90%;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            animation: slideIn 0.9s forwards 0.3s;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+            transform: scale(1);
+        }
+
+        #infoBanner:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+        }
+
+        #infoBanner .close-btn {
+            background: transparent;
+            border: none;
+            color: #ccc;
+            font-size: 22px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.25s ease;
+            transform: scale(1);
+        }
+
+        #infoBanner .close-btn:hover {
+            transform: scale(1.5);
+            color: #e74c3c;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                left: -400px;
+                opacity: 0;
+            }
+
+            to {
+                left: 12px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                left: 12px;
+                opacity: 1;
+            }
+
+            to {
+                left: -400px;
+                opacity: 0;
+            }
+        }
+
+
+
+        /* Images */
+        img.manga-img {
+            display: block;
+            width: 100%;
+            margin: 0 auto;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 0.6s forwards;
+        }
+
+        img.manga-img.bordered {
+            border: 4px solid #222;
+            border-radius: 4px;
+            margin: 12px auto;
+        }
+
+        img.manga-img:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            /* soft shadow */
+        }
+
+        img.manga-img.original-size {
+            width: auto !important;
+            max-width: 100%;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        #pageIndicator {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #2ecc71;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 10001;
+            /* above top bar & splash */
+        }
+
+        #pageTotalBtn {
+            background: rgba(34, 34, 34, 0.7);
+            /* translucent like buttons */
+            border: 2px solid rgba(68, 68, 68, 0.8);
+            color: #f1f1f1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: default;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <input type="file" id="folderPicker" webkitdirectory multiple hidden>
+
+    <div id="splash">
+        <canvas id="splashParticles"></canvas>
+        <h1>Tool Hive</h1>
+        <h2>Manga Viewer</h2>
+    </div>
+
+    <div class="top-bar">
+        <button onclick="document.getElementById('folderPicker').click()">📂 Open Folder</button>
+        <button onclick="chooseFolder()">📦 Open CBZ/PDF/RAR</button>
+        <button id="fitToggle" onclick="toggleFit()" style="display:none;">🖼 Fit to Width</button>
+        <button id="borderToggle" onclick="toggleBorders()" style="display:none;">🎨 Toggle Borders</button>
+        <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+            <input type="number" id="pageInput" min="1" value="1" style="width:60px; text-align:center;">
+            <button id="pageTotalBtn" style="padding:10px 16px; font-size:16px;">1</button>
+        </div>
+
+    </div>
+
+    <div id="infoBanner">
+        <span>Tip: If you extracted a file just now, use the <b>"Open Folder"</b> button to select the extracted folder
+            and start reading.</span>
+        <button class="close-btn" onclick="hideInfoBanner()">&times;</button>
+    </div>
+
+    <div id="pageIndicator">1</div>
+
+    <script>
+        let fitToWidth = true;
+        let bordersOn = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById("fitToggle").innerText = "🖼 Original Size";
+            document.getElementById("borderToggle").innerText = "🎨 Toggle Borders";
+
+            document.querySelector("button[onclick*='folderPicker']").title = "Open a folder of images";
+            document.querySelector("button[onclick*='chooseFolder']").title = "View CBZ/PDF (see instructions)";
+            document.getElementById('fitToggle').title = "Toggle fit-to-width (F)";
+            document.getElementById('borderToggle').title = "Toggle borders (B)";
+
+            // Drop down top bar on load
+            const topBar = document.querySelector('.top-bar');
+            setTimeout(() => { topBar.classList.add('show'); }, 100);
+        });
+
+        function chooseFolder() {
+            alert("📦 To open a CBZ, PDF or RAR:\n\n1. Open the 'Manga Reader' folder.\n2. Run:\n\n    python mangareader.py\n\nThis will extract your manga and auto-launch this viewer.");
+        }
+
+        function toggleFit() {
+            fitToWidth = !fitToWidth;
+            const imgs = document.querySelectorAll("img.manga-img");
+            imgs.forEach(img => {
+                if (fitToWidth) img.classList.remove("original-size");
+                else img.classList.add("original-size");
+            });
+            document.getElementById("fitToggle").innerText = fitToWidth ? "🖼 Original Size" : "🖼 Fit to Width";
+        }
+
+        function toggleBorders() {
+            bordersOn = !bordersOn;
+            const imgs = document.querySelectorAll("img.manga-img");
+            imgs.forEach(img => {
+                if (bordersOn) img.classList.add("bordered");
+                else img.classList.remove("bordered");
+            });
+        }
+
+        function hideInfoBanner() {
+            const banner = document.getElementById('infoBanner');
+            banner.style.animation = 'slideOut 0.5s forwards';
+            banner.addEventListener('animationend', () => banner.remove(), { once: true });
+        }
+
+        function hideTopBar() {
+            const topBar = document.querySelector('.top-bar');
+            topBar.classList.remove('show');
+            topBar.classList.add('hide'); // slide up & fade out
+            resetPageInputOnHide();
+        }
+
+        document.body.addEventListener('mousemove', (e) => {
+            const topBar = document.querySelector('.top-bar');
+            if (e.clientY <= 50) {
+                // Show top bar
+                topBar.classList.add('show');
+                topBar.classList.remove('hide');
+
+                // Show page indicator with priority
+                showPageIndicator(true);
+
+                // Update immediately
+                updatePageUI();
+            } else if (folderPicker.files.length) {
+                hideTopBar();
+                hidePageIndicator();
+            }
+        });
+
+
+
+        const folderPicker = document.getElementById('folderPicker');
+        folderPicker.addEventListener('change', () => {
+            const files = Array.from(folderPicker.files).sort((a, b) => a.name.localeCompare(b.name));
+            if (!files.length) return;
+
+            pageInput.style.display = "inline-block";
+            pageTotal.style.display = "inline-block";
+
+
+            // Remove splash instantly when reading starts
+            const splash = document.getElementById('splash');
+            if (splash) splash.remove();
+
+            // Hide top bar and info banner
+            hideTopBar();
+            const banner = document.getElementById('infoBanner');
+            if (banner) hideInfoBanner();
+
+            document.querySelectorAll(".manga-img").forEach(el => el.remove());
+
+            files.forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                const img = document.createElement('img');
+                img.classList.add('manga-img');
+                img.src = URL.createObjectURL(file);
+                if (bordersOn) img.classList.add('bordered');
+                if (!fitToWidth) img.classList.add('original-size');
+                document.body.appendChild(img);
+            });
+
+            updatePageUI();  // ensures pageInput, pageTotalBtn, and indicators are correct
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key.toLowerCase() === 'f') toggleFit();
+            if (e.key.toLowerCase() === 'b') toggleBorders();
+        });
+
+        const pageIndicator = document.getElementById('pageIndicator');
+        const pageInput = document.getElementById('pageInput');
+        const pageTotal = document.getElementById('pageTotalBtn');
+        let scrollTimeout;
+        let pageIndicatorPriority = false; // true when top bar is visible
+
+
+        // Get current page based on center of viewport
+        function getCurrentPage() {
+            const imgs = document.querySelectorAll("img.manga-img");
+            if (!imgs.length) return 1;
+            const viewportMiddle = window.innerHeight / 2;
+            let currentPage = 1;
+            imgs.forEach((img, index) => {
+                const rect = img.getBoundingClientRect();
+                if (rect.top <= viewportMiddle && rect.bottom >= viewportMiddle) currentPage = index + 1;
+            });
+            return currentPage;
+        }
+
+        // Update floating indicator and top bar input
+        function updatePageUI() {
+            const imgs = document.querySelectorAll("img.manga-img");
+            const hasFolder = imgs.length > 0;
+
+            // Show/hide top-bar elements based on folder state
+            pageInput.style.display = hasFolder ? "inline-block" : "none";
+            pageTotal.style.display = hasFolder ? "inline-block" : "none";
+            document.getElementById("fitToggle").style.display = hasFolder ? "inline-block" : "none";
+            document.getElementById("borderToggle").style.display = hasFolder ? "inline-block" : "none";
+
+            // Update page indicator only if folder loaded
+            if (!hasFolder) {
+                pageIndicator.style.display = "none";
+                pageTotal.style.display = "none";  // hide total page button too
+                pageInput.style.display = "none";
+                return;
+            }
+
+            const current = getCurrentPage();
+            const total = imgs.length;
+
+            pageIndicator.style.display = "block";
+            pageIndicator.textContent = `${current} / ${total}`;
+            pageTotal.textContent = `/ ${total}`;
+            pageInput.value = current;
+        }
+
+
+
+        // Show floating page indicator briefly
+        function showPageIndicator(priority = false) {
+            if (priority) pageIndicatorPriority = true; // top bar hover
+            pageIndicator.style.opacity = 1;
+            clearTimeout(scrollTimeout);
+
+            if (!priority) {
+                scrollTimeout = setTimeout(() => {
+                    if (!pageIndicatorPriority) pageIndicator.style.opacity = 0;
+                }, 1200);
+            }
+            display: none; /* hidden on startup */
+        }
+
+        function hidePageIndicator() {
+            pageIndicator.style.opacity = 0;
+            pageIndicatorPriority = false;
+        }
+
+
+        // Attach scroll & keyboard navigation
+        window.addEventListener('scroll', () => { updatePageUI(); showPageIndicator(); });
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(e.key)) {
+                setTimeout(() => { updatePageUI(); showPageIndicator(); }, 50);
+            }
+        });
+
+        // Jump to page on Enter
+        pageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const pageNum = parseInt(pageInput.value);
+                const imgs = document.querySelectorAll("img.manga-img");
+                if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= imgs.length) {
+                    imgs[pageNum - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                pageInput.value = getCurrentPage(); // sync back immediately
+            }
+        });
+
+        // Reset top bar input to match floating indicator when top bar hides
+        function resetPageInputOnHide() {
+            pageInput.value = pageIndicator.textContent.split(" / ")[0];
+        }
+
+
+        // Simple floating particle effect
+        (function () {
+            const canvas = document.getElementById('splashParticles');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const particleCount = 30; // subtle number
+            let w, h, animationFrame;
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            function initParticles() {
+                particles = [];
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * w,
+                        y: Math.random() * h,
+                        size: 2 + Math.random() * 3,
+                        speedY: 0.2 + Math.random() * 0.5,
+                        alpha: 0.2 + Math.random() * 0.3
+                    });
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                particles.forEach(p => {
+                    ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    p.y -= p.speedY; // float upwards
+                    if (p.y < -p.size) p.y = h + p.size;
+                });
+                animationFrame = requestAnimationFrame(draw);
+            }
+
+            initParticles();
+            draw();
+
+            // Stop particles when splash is removed
+            const splash = document.getElementById('splash');
+            if (splash) {
+                const observer = new MutationObserver(() => {
+                    if (!document.body.contains(splash)) {
+                        cancelAnimationFrame(animationFrame);
+                        ctx.clearRect(0, 0, w, h);
+                    }
+                });
+                observer.observe(document.body, { childList: true });
+            }
+        })();
+    </script>
+</body>
