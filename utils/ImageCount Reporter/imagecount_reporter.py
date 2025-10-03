@@ -12,13 +12,19 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
+
+
+
 import sys
 import argparse
 import subprocess
 from pathlib import Path
+#deffered imports.just mentioned here for record clarity
+#import datetime
+#import traceback
 
 # --- Setup guard ---
-setup_incomplete = False  # Flipped to False by setup.py
+setup_incomplete = True  # Flipped to False by setup.py
 
 if setup_incomplete:
     print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
@@ -34,16 +40,11 @@ if setup_incomplete:
 
     sys.exit(1)
 
-# --- launcherlib import ---
+# --- launcherlib imports ---
 try:
-    from launcherlib.prints import (
-        print_error,
-        print_warning,
-        print_success,
-        print_info,
-        print_menu_header,
-    )
+    from launcherlib.prints import print_error,print_warning,print_success,print_info,print_menu_header
     from launcherlib.dialogs import ask_directory, ask_saveas_filename
+    
 except ImportError:
     print("❌ launcherlib not found. Please run setup_imagecount_reporter.py first.")
     sys.exit(1)
