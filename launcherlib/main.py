@@ -23,6 +23,7 @@ from pathlib import Path
 
 from .paths import resolve_path, BASE_DIR
 from .prints import print_error, print_menu_exit, print_menu_header, print_menu_option, print_warning
+from .helpers import TOOLS
 
 
 def run_script(path, args=None, blocking=True):
@@ -111,6 +112,58 @@ def launch_tool(tool):
         else:
             # Non-blocking: immediately return to launcher
             break
+
+def run_child_script(tool_key, extra_args=None):
+    """
+    Run a registered tool by key.
+    - Scripts: forwarded with CLI args, respect blocking.
+    - Callable tools: run directly in the same process.
+    - Friendly warnings on non-zero exit codes (blocking only).
+    """
+    tool = TOOLS.get(tool_key)
+    if not tool:
+        print_error(f"Tool not found: {tool_key}")
+        return
+
+    entry = tool["entry"]
+    blocking = tool.get("blocking", True)
+    extra_args = extra_args or []
+
+    if callable(entry):
+        try:
+            entry()
+        except Exception:
+            print_error("Error while running callable tool:")
+            traceback.print_exc()
+        return
+
+    # Accept both str and Path
+    elif isinstance(entry, (str, Path)):
+        path = resolve_path(entry)
+        if not path.exists():
+            print_error(f"Tool script not found: {path}")
+            return
+
+        try:
+            env = os.environ.copy()
+            # Convert Path to str only here
+            env["PYTHONPATH"] = os.pathsep.join([str(BASE_DIR), env.get("PYTHONPATH", "")])
+
+            cmd = [sys.executable, str(path), *extra_args]
+
+            if blocking:
+                proc = subprocess.run(cmd, env=env)
+                if proc.returncode != 0:
+                    print_warning(f"Tool exited with code {proc.returncode}")
+            else:
+                subprocess.Popen(cmd, env=env)
+
+        except Exception as e:
+            print_error(f"Failed to run script: {e}")
+            traceback.print_exc()
+
+    else:
+        print_error(f"Unsupported tool entry: {entry}")
 
 
 

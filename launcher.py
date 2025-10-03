@@ -19,11 +19,11 @@ import sys
 from pathlib import Path
 
 from launcherlib.prints import print_error
-from config import SUBCOMMANDS
-from core import run_child_script
-from help import show_help
-from menu.search import search_mode
-from menu.interactive import interactive_menu
+from launcherlib.config import SUBCOMMANDS
+from launcherlib.main import run_child_script
+from launcherlib.help import show_help
+from launcherlib.search import search_mode
+from launcherlib.interactive import interactive_menu
 
 
 # --- Main entry ---

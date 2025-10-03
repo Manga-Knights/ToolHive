@@ -33,5 +33,9 @@ from .helpers import (
     TOOLS
 )
 from .paths import resolve_path, BASE_DIR    
-from .main import run_script, run_callable, prompt_post_run, launch_tool
+from .main import run_script, run_callable, prompt_post_run, launch_tool, run_child_script
+from .search import search_mode
+from .interactive import interactive_menu
+from .help import show_help
+from .config import SUBCOMMANDS
     

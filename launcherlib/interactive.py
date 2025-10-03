@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# ToolHive Launcher interactive
+# ToolHive Launcherlib interactive
 # Copyright (C) 2025 Manga-Knights
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,9 @@
 from collections import defaultdict
 from pathlib import Path
 
-from launcherlib.prints import print_menu_exit, print_menu_header, print_menu_option, print_warning, print_submenu_option, Colors
-from launcherlib.helpers import list_tools
-from core import run_child_script
+from .prints import print_menu_exit, print_menu_header, print_menu_option, print_warning, print_submenu_option, Colors
+from .helpers import list_tools
+from .main import run_child_script
 from .search import search_mode
 
 

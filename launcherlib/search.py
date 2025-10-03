@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# ToolHive Launcher search
+# ToolHive Launcherlib search
 # Copyright (C) 2025 Manga-Knights
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,8 +16,8 @@
 
 from pathlib import Path
 
-from launcherlib.prints import print_warning, print_menu_header, print_submenu_option
-from launcherlib.helpers import search_tools
+from .prints import print_warning, print_menu_header, print_submenu_option
+from .helpers import search_tools
 
 
 def search_mode():

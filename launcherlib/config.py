@@ -15,6 +15,10 @@
 
 
 
+from pathlib import Path
+
+from .helpers import register_tool
+
 # --- Map subcommand names to registered tool keys ---
 SUBCOMMANDS = {
     "renamer": "1",
@@ -28,13 +32,6 @@ SUBCOMMANDS = {
     "compare": "9",
     "count": "10",
 }
-
-
-
-from pathlib import Path
-
-from launcherlib.helpers import register_tool
-
 
 # --- Tool registration (existing) ---
 register_tool(
@@ -103,7 +100,7 @@ register_tool(
 register_tool(
     "8", 
     "Manga Reader", 
-    Path("manga reader")/"mangareader.py",
+    Path("Manga Reader")/"mangareader.py",
     group="Viewing Tools",
     long_desc="Open manga from folder, CBZ, RAR, or PDF (auto-extract if needed)"
 )
