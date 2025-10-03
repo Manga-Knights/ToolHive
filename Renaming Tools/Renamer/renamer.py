@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# ToolHive Launcher
-# Copyright (C) 2025
+# ToolHive Renamer
+# Copyright (C) 2025 Manga-Knights
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,10 +12,19 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
+
+
+
 import os
 import sys
 import argparse
 import traceback
+
+from natsort import natsorted
+#import datetime
+
+from launcherlib.prints import print_success, print_warning, print_info, print_error, print_submenu_option, print_menu_header
+from launcherlib.dialogs import ask_directory
 
 # --- Setup guard ---
 setup_incomplete = True  # Flipped to False by setup.py after first-time run
@@ -53,7 +62,6 @@ def log_error(msg, log_file):
 
 # ---------------- FILE RENAME ----------------
 def rename_images_in_folder(folder_path, extensions, log_file=None, debug=False):
-    from launcherlib import print_success, print_warning, print_info, print_error
     try:
         # Filter files by extensions if provided; otherwise take all files
         files = sorted([f for f in os.listdir(folder_path)
@@ -96,9 +104,7 @@ def rename_images_in_folder(folder_path, extensions, log_file=None, debug=False)
 
 # ---------------- FOLDER RENAME ----------------
 def rename_subfolders(master_folder, prefix, log_file=None, debug=False):
-    from launcherlib import print_success, print_warning, print_error
     try:
-        from natsort import natsorted
         subfolders = [d for d in os.listdir(master_folder)
                       if os.path.isdir(os.path.join(master_folder, d))]
         if not subfolders:
@@ -136,8 +142,6 @@ def rename_subfolders(master_folder, prefix, log_file=None, debug=False):
 
 # ---------------- PRE-SCAN ----------------
 def prescan(master_folder, extensions, prefix, silent=False, log_file=None, debug=False):
-    from launcherlib import print_menu_header, print_submenu_option, print_warning, print_error
-    from natsort import natsorted
     issues = []
     try:
         for root, dirs, files in os.walk(master_folder):
@@ -187,7 +191,6 @@ def rename_files_recursively(master_folder, extensions, prefix, log_file=None, d
 
 
 def run_renamer_cli(input_folder, extensions, silent, subfolder_prefix, log_file=None, debug=False):
-    from launcherlib import print_error
     if not prescan(input_folder, extensions, subfolder_prefix, silent, log_file, debug):
         print_error("Cancelled due to conflicts.")
         sys.exit(1)
@@ -195,7 +198,6 @@ def run_renamer_cli(input_folder, extensions, silent, subfolder_prefix, log_file
 
 
 def run_renamer_gui():
-    from launcherlib import ask_directory, print_error
     input_folder = ask_directory("Select Master Folder")
     if not input_folder:
         print_error("Cancelled.")
