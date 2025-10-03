@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# ToolHive Launcher
-# Copyright (C) 2025 Your Name
+# ToolHive Matching Renaming
+# Copyright (C) 2025 Manga-Knights
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,6 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
+
+
+
 import os
 import sys
 
@@ -19,7 +22,7 @@ import sys
 setup_incomplete = True  # Flipped to False by setup.py
 
 if setup_incomplete:
-    import os, sys, subprocess
+    import subprocess
 
     print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
 
@@ -35,16 +38,23 @@ if setup_incomplete:
 
     sys.exit(1)
 
-# --- launcherlib import ---
+from pathlib import Path
+#these are the deffereed imports. mentioned here for record clarity
+#import datetime
+#from rapidfuzz import process, fuzz
+#import traceback
+#import platform, subprocess
+#import argparse
+
+
+# --- launcherlib imports ---
 try:
-    import launcherlib
-    from launcherlib import print_success, print_warning, print_error, print_info, ask_directory
+    from launcherlib.prints import print_success, print_warning, print_error, print_info
+    from launcherlib.dialogs import ask_directory
 except ImportError:
     print("❌ launcherlib not found. Please run the setup script first.")
     sys.exit(1)
 
-# --- Original code continues below ---
-from pathlib import Path
 
 # --- Helper to safely call input() after prints ---
 def safe_input(prompt):
