@@ -1,0 +1,193 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# ToolHive CBZ Forger
+# Copyright (C) 2025 Manga-Knights
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
+
+
+
+
+
+CBZ Forger Developer Guide
+1. Overview
+
+Purpose:
+CBZ Forger converts subfolders of images into CBZ archives. It optionally converts BMP images to PNG, supports customizable image extensions, overwriting, logging, silent mode, and debug output.
+
+Key Features:
+
+Convert BMP → PNG safely.
+
+Natural sorting of images.
+
+Create CBZ archives with optional overwrite.
+
+CLI interface with multiple options.
+
+Logging system with selective log levels.
+
+Lazy imports for performance.
+
+Interactive fallback when input is missing or invalid.
+
+Full traceback support with --debug.
+
+silent mode for automated pipelines.
+
+2. Architecture
+
+A) Entry point: if __name__ == "__main__":
+
+Handles argument parsing via argparse.
+
+Uses a CustomArgumentParser to show inline usage, examples, and flag summary on error or -h.
+
+B) Core functions:
+
+
+| Function                                                                                        | Purpose                                                 | Notes / Lazy Imports                                                                                     |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `run_cbz_forger(args)`                                                                          | Main orchestration function                             | Calls input validation, BMP conversion, CBZ creation.                                                    |
+| `convert_bmp_safe(folder, silent, debug, logfile, log_levels)`                                   | Converts BMPs → PNG                                     | Imports `PIL.Image` and `UnidentifiedImageError` only when invoked. Handles BMP collision interactively. |
+| `create_cbz(folder, output_dir, exts, silent, debug, logfile, overwrite=False, log_levels=None)` | Creates a CBZ archive                                   | Lazy imports `natsorted` and `tqdm` (if not silent). Sanitizes file names, supports overwrite.            |
+| `natsorted_images(folder, exts)`                                                                | Returns naturally sorted list of images                 | Lazy imports `natsorted`.                                                                                |
+| `sanitize_name(path)`                                                                           | Appends `_1`, `_2`, etc. until no collision             | Pure utility, no imports.                                                                                |
+| `validate_extensions(ext_string)`                                                               | Validates comma-separated extensions                    | Returns default extensions if input is empty or invalid.                                                 |
+| `log_message(logfile, level, msg, log_levels)`                                                  | Writes messages to log file if enabled                  | Handles creation of log file if path is valid and file does not exist.                                   |
+| `print_usage_examples()`                                                                        | Prints usage examples on CLI error or invalid extension |                                                                                                          |
+| `print_flag_summary()`                                                                          | Prints CLI flags and descriptions                       |                                                                                                          |
+
+
+C) CLI Options
+
+
+
+| Flag            | Description                                                      | Notes                                                                                            |
+| --------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `--input`       | Master folder of image subfolders                                | Fallback to interactive selection if missing/invalid.                                            |
+| `--output`      | Output folder for CBZ                                            | Defaults to input folder; created if does not exist.                                             |
+| `--skip-bmp`    | Skip BMP conversion                                              | Default: convert BMPs.                                                                           |
+| `--ext`         | Comma-separated extensions                                       | Defaults to `.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff`. Invalid extensions print examples and exit. |
+| `--silent`       | Suppress all prints and progress bars (except BMP prompt)        | Overrides `--debug`.                                                                             |
+| `--debug`       | Print full traceback on any exception                            | silent mode suppresses output.                                                                    |
+| `--log [file]`  | Logs all messages; default `cbz_forger.log` if no file specified | Always works regardless of other flags.                                                          |
+| `--overwrite`   | Overwrite existing CBZ instead of sanitizing names               |                                                                                                  |
+| `--log-info`    | Log INFO messages                                                | Must be used with `--log`.                                                                       |
+| `--log-warning` | Log WARNING messages                                             | Must be used with `--log`.                                                                       |
+| `--log-error`   | Log ERROR messages                                               | Must be used with `--log`.                                                                       |
+| `-h`            | Show help, usage, examples                                       |                                                                                                  |
+
+
+
+4. Error Handling
+
+Mechanisms:
+
+All functions wrapped with try/except for unexpected errors.
+
+Errors optionally print traceback if --debug is True.
+
+If --silent is active, suppress all print output except required BMP collision prompts.
+
+All errors, warnings, and info can be logged if --log is specified.
+
+Invalid input paths fallback to ask_directory.
+
+Invalid extensions halt execution and display usage examples.
+
+Logging Levels:
+
+INFO → General process messages (folder found, CBZ created).
+
+WARNING → Name sanitization, missing images, skipped conversions.
+
+ERROR → Failed conversion, CBZ creation, invalid input/output paths.
+
+Fallbacks / Priority:
+
+--silent overrides --debug for printing.
+
+Log messages always follow --log and optional --log-<level> filters.
+
+If --ext is invalid, execution stops; does not fallback to default silently.
+
+5. Lazy Import Strategy
+
+Global import: traceback (always available for debug).
+
+Inside convert_bmp_safe: PIL.Image, UnidentifiedImageError.
+
+Inside create_cbz: natsorted and tqdm (only if not silent).
+
+Inside run_cbz_forger: ask_directory (only if input folder is invalid/missing).
+
+Purpose: Reduce startup time and memory footprint for pipelines that may not need all features.
+
+6. File I/O
+
+Input: folder(s) of images. Checks extensions, existence, and skips invalid folders.
+
+BMP Conversion: Only modifies .bmp files. PNG collision prompts interactively.
+
+Output: CBZ files written to specified output folder. Name collisions handled via _1, _2 suffix or overwrite flag.
+
+Logging: Creates log file if not present; validates path; writes messages per selected levels.
+
+7. Debugging Guide
+
+Use --debug to see full Python traceback of any exception.
+
+Check log file (if --log used) for detailed messages:
+
+Errors: failed conversions, CBZ write errors.
+
+Warnings: skipped BMPs, name collisions, missing images.
+
+Interactive prompts may block scripts — use --skip-bmp and/or --silent in automated pipelines.
+
+Extensions validation ensures that typos don’t silently fail.
+
+8. Development / Future Commits Notes
+
+Adding new image formats: update IMAGE_EXTS_DEFAULT and validate_extensions().
+
+Adding new CLI flags: update argparse and CustomArgumentParser.print_help().
+
+CBZ Compression Options: currently uses ZIP deflate default. Could expose compression level.
+
+Parallel Processing: CBZ creation and BMP conversion could be threaded for large folders.
+
+Testing: create unit tests for:
+
+BMP conversion (including collision handling).
+
+CBZ creation (name collisions, overwrite).
+
+CLI flag combinations.
+
+Logging and silent/debug interplay.
+
+Error Handling Enhancements: ensure all file I/O, zip write, and image open/save calls are wrapped.
+
+Lazy Imports: ensure any new optional dependencies follow the same pattern to reduce startup overhead.
+
+9. Summary of Key Mechanisms
+
+
+| Mechanism                     | Purpose                                        |
+| ----------------------------- | ---------------------------------------------- |
+| Lazy Imports                  | Reduce memory and startup overhead             |
+| Logging w/ Levels             | Track INFO/WARNING/ERROR selectively           |
+| Interactive BMP Collision     | Prevent accidental overwrites                  |
+| Sanitized File Names          | Avoid CBZ overwrite unless explicitly set      |
+| CLI Parsing with Custom Error | Show usage + examples on mistakes              |
+| silent + Debug Priority        | silent suppresses debug print; debug still logs |
+| Extensions Validation         | Prevent runtime errors with invalid files      |
