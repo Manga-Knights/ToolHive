@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# ToolHive Launcher
-# Copyright (C) 2025 Your Name
+# ToolHive Manual Sorter
+# Copyright (C) 2025 Manga-Knights
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,6 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
+
+
+
 import os
 import sys
 
@@ -19,7 +22,7 @@ import sys
 setup_incomplete = True  # Flipped to False by setup.py
 
 if setup_incomplete:
-    import os, sys, subprocess
+    import subprocess
 
     print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
 
@@ -35,18 +38,11 @@ if setup_incomplete:
 
     sys.exit(1)
 
-# --- launcherlib import ---
+# --- launcherlib imports ---
 try:
-    import launcherlib
-    from launcherlib import (
-        print_error,
-        print_warning,
-        print_success,
-        print_info,
-        print_menu_header,
-        ask_directory,
-        ask_saveas_filename,
-    )
+    from launcherlib.prints import print_error, print_warning, print_success, print_info, print_menu_header
+    from launcherlib.dialogs import ask_directory, ask_saveas_filename
+
 except ImportError:
     print("❌ launcherlib not found. Please run the setup script first.")
     sys.exit(1)
