@@ -12,24 +12,24 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See https://www.gnu.org/licenses/gpl-3.0.en.html for details.
 
+
+
+
 import sys
 import subprocess
 from pathlib import Path
 import shutil
 import re
 import argparse
+#deffered imports. just mentioned here for record clarity
+#import traceback
+#from tkinter import messagebox
 
-try:
-    from launcherlib.dialogs import ask_directory 
-    from launcherlib.prints import print_warning, print_error, print_success, Colors, print_info
-except ImportError:
-    print("❌ launcherlib not found. Please run setup_image_flattener.py first.")
-    sys.exit(1)
 
 DEFAULT_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff", ".gif"}
 
 # --- Setup guard ---
-setup_incomplete = False
+setup_incomplete = True
 
 if setup_incomplete:
     print(f"⚠️ Setup has not been run yet. Please run the setup script first.")
@@ -46,14 +46,25 @@ if setup_incomplete:
     sys.exit(1)
 
 
+#---------launcherlib imports----------------------------------------------------------------------
+try:
+    from launcherlib.dialogs import ask_directory 
+    from launcherlib.prints import print_warning, print_error, print_success, Colors, print_info
+except ImportError:
+    print("❌ launcherlib not found. Please run setup_image_flattener.py first.")
+    sys.exit(1)   
+
+
 def parse_extensions(ext_arg):
     if not ext_arg or not ext_arg.strip():
         return DEFAULT_EXTENSIONS
+
     cleaned = {
-        ("." + e.lower().lstrip("."))
-        for e in (ext.strip() for e in ext_arg.split(","))
-        if e
+        ("." + ext.lower().lstrip("."))
+        for ext in (ext.strip() for ext in ext_arg.split(","))
+        if ext
     }
+
     return cleaned or DEFAULT_EXTENSIONS
 
 
