@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Manga Viewer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    
+    <input type="file" id="folderPicker" webkitdirectory multiple hidden />
+
+    <div id="splash">
+      <canvas id="splashParticles"></canvas>
+      <h1>Tool Hive</h1>
+      <h2>Manga Viewer</h2>
+    </div>
+
+    <div class="top-bar">
+      <button id="openFolderBtn">📂 Open Folder</button>
+      <button id="openArchiveBtn">📦 Open CBZ/PDF/RAR</button>
+      <button id="fitToggle" style="display: none">🖼 Fit to Width</button>
+      <button id="borderToggle" style="display: none">🎨 Toggle Borders</button>
+      <button id="scrollToggle">🖱 Toggle Scrollbar</button>
+      <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0">
+        <input
+          type="number"
+          id="pageInput"
+          min="1"
+          value="1"
+          style="width: 60px; text-align: center"
+        />
+        <button id="pageTotalBtn" style="padding: 10px 16px; font-size: 16px">
+          1
+        </button>
+      </div>
+    </div>
+
+    <div id="infoBanner">
+      <span
+        >Tip: If you extracted a file just now, use the
+        <b>"Open Folder"</b> button to select the extracted folder and start
+        reading.</span
+      >
+      <button class="close-btn">&times;</button>
+    </div>
+
+    <div id="pageIndicator">1</div>
+
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "name": "manga-viewer",
+  "version": "1.0.0",
+  "description": "ToolHive manga viewer built with Electron",
+  "author": "Manga Knights",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.mangaknights.mangaviewer",
+    "productName": "MangaViewer",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Manga-Knights",
+        "repo": "ToolHive"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Manga-Knights/ToolHive.git"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2",
+    "overlayscrollbars": "^2.12.0"
+  }
+}
