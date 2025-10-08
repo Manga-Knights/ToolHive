@@ -1,6 +1,6 @@
 {
   "name": "manga-viewer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ToolHive manga viewer built with Electron",
   "author": "Manga Knights",
   "main": "main.js",
