@@ -109,7 +109,7 @@ register_tool(
 register_tool(
     "9", 
     "Image Comparator", 
-    Path("Image_Comparator")/"start_with_folder.py",
+    Path("Image Comparator")/"start_with_folder.py",
     group="Viewing Tools",
     long_desc="GUI to compare two image folders side-by-side with metrics"
 )

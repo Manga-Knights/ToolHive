@@ -1,0 +1,43 @@
+# Image Comparator Requirements
+# Python 3.7+
+
+# ===== REQUIRED DEPENDENCIES =====
+# GUI Framework
+PyQt5>=5.15.0,<6.0.0
+
+# ===== OPTIONAL DEPENDENCIES =====
+# Image Processing (uncomment based on your image_metrics.py implementation)
+
+# Basic image operations and additional format support
+Pillow>=9.0.0
+
+# Numerical operations (required for most metrics)
+numpy>=1.21.0
+
+# Advanced image metrics (SSIM, PSNR, etc.)
+scikit-image>=0.19.0
+
+# Alternative for OpenCV-based metrics (choose either this or scikit-image)
+opencv-python>=4.5.0
+
+# ===== BUILD DEPENDENCIES (Development only) =====
+# For building standalone executables
+# pyinstaller>=5.0.0
+
+# ===== TESTING DEPENDENCIES (Development only) =====
+# pytest>=7.0.0
+# pytest-qt>=4.0.0
+# pytest-cov>=3.0.0
+
+# ===== NOTES =====
+# If you get import errors, uncomment the relevant packages above
+# 
+# Minimal installation (GUI only, no metrics):
+#   pip install PyQt5
+#
+# Full installation (all features):
+#   pip install -r requirements.txt
+#
+# Development installation (includes build/test tools):
+#   pip install -r requirements.txt
+#   pip install pyinstaller pytest pytest-qt pytest-cov
